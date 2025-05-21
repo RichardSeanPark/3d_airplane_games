@@ -153,7 +153,7 @@ socket.onclose = () => {
 
 // Camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 5; // Position the camera
+camera.position.z = 10; // NEW - Position the camera further back
 
 // Renderer
 const renderer = new THREE.WebGLRenderer();
@@ -173,8 +173,9 @@ const playerGeometry = new THREE.ConeGeometry(0.5, 1, 8); // Radius, height, rad
 playerGeometry.rotateX(Math.PI / 2); // Orient it to point forward
 const playerMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 }); // Red color
 const playerAirplane = new THREE.Mesh(playerGeometry, playerMaterial);
-playerAirplane.position.y = -2; // Start a bit lower
+playerAirplane.position.y = -4; // NEW - Start a bit lower
 scene.add(playerAirplane);
+playerAirplane.rotation.y = Math.PI; // Make player face towards negative Z
 
 // Bullets
 const bulletGeometry = new THREE.SphereGeometry(0.1, 8, 8); // Radius, widthSegments, heightSegments
@@ -209,7 +210,7 @@ window.addEventListener('keydown', (event) => {
             const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
             bullet.userData = { id: localBulletId, hitConfirmed: false }; // Add ID and hitConfirmed flag
             bullet.position.copy(playerAirplane.position);
-            bullet.position.z += 0.6; // Start slightly in front of plane nose
+            bullet.position.z -= 0.6; // NEW - Start slightly in front (negative Z) of plane nose
             scene.add(bullet);
             bullets.push(bullet);
 
@@ -219,7 +220,7 @@ window.addEventListener('keydown', (event) => {
                     payload: {
                         timestamp: Date.now(),
                         bulletInitialPosition: bullet.position.clone(), 
-                        bulletVelocity: new THREE.Vector3(0, 0, bulletSpeed).applyQuaternion(playerAirplane.quaternion) 
+                        bulletVelocity: new THREE.Vector3(0, 0, -bulletSpeed).applyQuaternion(playerAirplane.quaternion) // NEW
                     }
                 };
                 socket.send(JSON.stringify(shootMessage));
@@ -258,10 +259,12 @@ function animate() {
         // Update bullets
         for (let i = bullets.length - 1; i >= 0; i--) {
             const bullet = bullets[i];
-            bullet.position.z += bulletSpeed; 
+            bullet.position.z -= bulletSpeed; 
 
-            if (bullet.position.z > 50) {
+            if (bullet.position.z < -100) { // NEW - Remove if it goes far into negative Z
                 scene.remove(bullet);
+                if(bullet.geometry) bullet.geometry.dispose(); // Dispose geometry
+                if(bullet.material) bullet.material.dispose(); // Dispose material
                 bullets.splice(i, 1);
             }
         }
@@ -281,10 +284,13 @@ function animate() {
         // Update enemies
         for (let i = enemies.length - 1; i >= 0; i--) {
             const enemy = enemies[i];
-            enemy.position.z -= enemySpeed; 
+            enemy.position.z += enemySpeed; // NEW - Move enemy towards positive Z
 
-            if (enemy.position.z < -5) { 
+            // NEW - Remove if enemy moves past the camera (assuming camera.position.z is positive)
+            if (enemy.position.z > camera.position.z + 5) { 
                 scene.remove(enemy);
+                if (enemy.geometry) enemy.geometry.dispose(); // Dispose geometry
+                if (enemy.material) enemy.material.dispose(); // Dispose material
                 enemies.splice(i, 1);
             }
         }
@@ -380,12 +386,11 @@ function animate() {
             const rBullet = remoteBullets[i];
             rBullet.mesh.position.add(rBullet.velocity); // Apply velocity directly
 
-            // Remove remote bullet if it goes off screen (adjust threshold as needed)
-            // This threshold should be consistent with local bullets
-            if (rBullet.mesh.position.z > 50 || rBullet.mesh.position.z < -10 || Math.abs(rBullet.mesh.position.x) > 10 || Math.abs(rBullet.mesh.position.y) > 10) {
+            // Remove remote bullet if it goes off screen
+            if (rBullet.mesh.position.z < -100 || Math.abs(rBullet.mesh.position.x) > 10 || Math.abs(rBullet.mesh.position.y) > 10) { // NEW
                 scene.remove(rBullet.mesh);
-                if (rBullet.mesh.geometry) rBullet.mesh.geometry.dispose(); // If cloned geometry
-                if (rBullet.mesh.material) rBullet.mesh.material.dispose(); // If cloned material
+                if (rBullet.mesh.geometry) rBullet.mesh.geometry.dispose(); 
+                if (rBullet.mesh.material) rBullet.mesh.material.dispose(); 
                 remoteBullets.splice(i, 1);
             }
         }

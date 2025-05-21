@@ -136,11 +136,11 @@ wss.on('connection', (ws) => {
             
                 case 'player_hit_by_enemy':
                     const { playerId: hitPlayerId, enemyId: attackingEnemyId } = parsedMessage.payload;
-                    const player = players.get(hitPlayerId);
+                    const attackedPlayer = players.get(hitPlayerId); // Renamed variable
 
-                    if (player && !player.isDefeated && enemies.has(attackingEnemyId)) {
-                        player.lives--; 
-                        console.log(`Player ${hitPlayerId} was hit by enemy ${attackingEnemyId}. Lives left: ${player.lives}`);
+                    if (attackedPlayer && !attackedPlayer.isDefeated && enemies.has(attackingEnemyId)) { // Used renamed variable
+                        attackedPlayer.lives--; // Used renamed variable
+                        console.log(`Player ${hitPlayerId} was hit by enemy ${attackingEnemyId}. Lives left: ${attackedPlayer.lives}`); // Used renamed variable
 
                         enemies.delete(attackingEnemyId);
                         broadcast({
@@ -148,8 +148,8 @@ wss.on('connection', (ws) => {
                             payload: { enemyId: attackingEnemyId, destroyedByPlayerId: null } 
                         }, null);
 
-                        if (player.lives <= 0) {
-                            player.isDefeated = true; 
+                        if (attackedPlayer.lives <= 0) { // Used renamed variable
+                            attackedPlayer.isDefeated = true; // Used renamed variable
                             broadcast({
                                 type: 'player_game_over',
                                 payload: { playerId: hitPlayerId }
@@ -172,11 +172,11 @@ wss.on('connection', (ws) => {
                         }
                         // Optional: Broadcast player_health_update
                         // else {
-                        //     broadcast({ type: 'player_health_update', payload: { playerId: hitPlayerId, lives: player.lives }}, null);
+                        //     broadcast({ type: 'player_health_update', payload: { playerId: hitPlayerId, lives: attackedPlayer.lives }}, null); // Used renamed variable
                         // }
                     } else {
-                        if (!player) console.log(`player_hit_by_enemy: Player ${hitPlayerId} not found.`);
-                        else if (player && player.isDefeated) console.log(`player_hit_by_enemy: Player ${hitPlayerId} already defeated.`);
+                        if (!attackedPlayer) console.log(`player_hit_by_enemy: Player ${hitPlayerId} not found.`); // Used renamed variable
+                        else if (attackedPlayer && attackedPlayer.isDefeated) console.log(`player_hit_by_enemy: Player ${hitPlayerId} already defeated.`); // Used renamed variable
                         else if (!enemies.has(attackingEnemyId)) console.log(`player_hit_by_enemy: Enemy ${attackingEnemyId} not found.`);
                     }
                     break;
@@ -222,7 +222,7 @@ function gameLoop() {
             position: {
                 x: (Math.random() - 0.5) * 8, // Random X
                 y: Math.random() * 2,        // Random Y
-                z: 30                        // Start far away
+                z: -50                       // NEW VALUE - Start far away in negative Z
             },
             // Server could also assign velocity if enemies have different movement patterns
             // velocity: { x: 0, y: 0, z: -enemySpeed } // (enemySpeed would need to be defined)
