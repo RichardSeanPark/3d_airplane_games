@@ -1,0 +1,15 @@
+{
+  "name": "3d-airplane-shooter-server",
+  "version": "0.1.0",
+  "description": "Server for the 3D Airplane Shooter game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
+  },
+  "author": "AI Game Developer",
+  "license": "MIT"
+}
